@@ -1,90 +1,107 @@
-var through = require('through'),
-    chalk = require('chalk'),
-    gulpmatch = require('gulp-match'),
-    path = require('path'),
-    gutil = require('gulp-util');
+'use strict';
+
+const through = require('through');
+const chalk = require('chalk');
+const gulpMatch = require('gulp-match');
+const path = require('path');
+const gUtil = require('gulp-util');
+const merge = require('merge');
+
+const defaults = {
+	delim: '-',
+	targetPre: 'scss',
+	eol: ';',
+	ignoreJsonErrors: false,
+	numberPrefix: '_',
+	pre: '$'
+};
+
+let settings;
 
 // from http://stackoverflow.com/questions/17191265/legal-characters-for-sass-and-scss-variable-names
-var escapableCharactersRegex = /(["!#$%&\'()*+,.\/:;\s<=>?@\[\]^\{\}|~])/g;
-function replaceEscapableCharacters(str) { 
-  return str.replace(escapableCharactersRegex, function(a,b) {
-    return '\\' + b;
-  });
-}
-var firstCharacterIsNumber = /^[0-9]/;
+const invalidCharactersRegex = /(["!#$%&'()*+,.\/:;\s<=>?@\[\]^\{\}|~])/g;
 
-module.exports = function(opt) {
-  opt = opt || {};
-  opt.delim = opt.delim || '-';
-  opt.sass = !!opt.sass;
-  opt.eol = opt.sass ? '' : ';';
-  opt.ignoreJsonErrors = !!opt.ignoreJsonErrors;
-  opt.escapeIllegalCharacters = opt.escapeIllegalCharacters === undefined ? true : opt.escapeIllegalCharacters;
-  opt.firstCharacter = opt.firstCharacter || '_';
-  opt.prefixFirstNumericCharacter = opt.prefixFirstNumericCharacter === undefined ? true : opt.prefixFirstNumericCharacter;
+const removeInvalidCharacters = function(str) {
+	return str.replace(invalidCharactersRegex, '');
+};
 
-  return through(processJSON);
+const firstCharacterIsNumber = /^[0-9]/;
 
-  /////////////
+const loadVariablesRecursive = function(obj, path, cb) {
+	let val;
+	let key;
 
-  function processJSON(file) {
+	for(key in obj) {
+		if(obj.hasOwnProperty(key)) {
+			val = obj[key];
 
-    // if it does not have a .json suffix, ignore the file
-    if (!gulpmatch(file,'**/*.json')) {
-      this.push(file);
-      return;
-    }
+			// remove invalid characters
+			key = removeInvalidCharacters(key);
 
-    // load the JSON
-    try {
-      var parsedJSON = JSON.parse(file.contents);
-    } catch (e) {
-      if (opt.ignoreJsonErrors) {
-        console.log(chalk.red('[gulp-json-sass]') + ' Invalid JSON in ' + file.path + '. (Continuing.)');
-      } else {
-        console.log(chalk.red('[gulp-json-sass]') + ' Invalid JSON in ' + file.path);
-        this.emit('error', e);
-      }
-      return;
-    }
+			// variables cannot begin with a number
+			if(path === '' && firstCharacterIsNumber.exec(key)) {
+				key = settings.numberPrefix + key;
+			}
 
-    // process the JSON
-    var sassVariables = [];
+			if(typeof val === 'object') {
+				loadVariablesRecursive(val, path + key + settings.delim, cb);
+			} else {
+				cb(settings.pre + path + key + ': ' + val + settings.eol);
+			}
+		}
+	}
+};
 
-    loadVariablesRecursive(parsedJSON, '', function pushVariable(assignmentString) {
-      sassVariables.push(assignmentString);
-    });
+const processJSON = function(file) {
+	let parsedJSON;
 
-    var sass = sassVariables.join('\n');
-    file.contents = Buffer(sass);
+	// if it does not have a .json suffix, ignore the file
+	if(!gulpMatch(file, '**/*.json')) {
+		this.push(file);
+		return;
+	}
 
-    file.path = gutil.replaceExtension(file.path, opt.sass ? '.sass' : '.scss');
+	// load the JSON
+	try {
+		parsedJSON = JSON.parse(file.contents);
+	} catch(e) {
+		if(settings.ignoreJsonErrors) {
+			console.log(chalk.yellow('[gulp-json-css]') + ' Invalid JSON in ' + file.path + '. (Continuing.)');
+		} else {
+			console.log(chalk.red('[gulp-json-css]') + ' Invalid JSON in ' + file.path);
+			this.emit('error', e);
+		}
+		return;
+	}
 
-    this.push(file);
-  }
+	// process the JSON
+	const variables = [];
 
-  function loadVariablesRecursive(obj, path, cb) {
-    for (var key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        var val = obj[key];
+	loadVariablesRecursive(parsedJSON, '', (assignmentString) => {
+		variables.push(assignmentString);
+	});
 
-        // escape invalid sass characters
-        if (opt.escapeIllegalCharacters) {
-          key = replaceEscapableCharacters(key);
-        }
+	const content = variables.join('\n');
 
-        // sass variables cannot begin with a number
-        if (path === '' && firstCharacterIsNumber.exec(key) && opt.prefixFirstNumericCharacter) {
-          key = opt.firstCharacter + key;
-        }
+	file.contents = Buffer(content);
 
-        if (typeof val !== 'object') {
-          cb('$' + path + key + ': ' + val + opt.eol);
-        } else {
-          loadVariablesRecursive(val, path + key + opt.delim, cb);
-        }
-      }
-    }
-  }
+	file.path = gUtil.replaceExtension(file.path, '.' + settings.targetPre);
 
-}
+	this.push(file);
+};
+
+module.exports = function(config) {
+	settings = merge(defaults, config);
+
+	switch(settings.targetPre) {
+		case 'scss':
+		case 'sass':
+			settings.pre = '$';
+			break;
+		case 'less':
+			settings.pre = '@';
+			break;
+	}
+
+	return through(processJSON);
+};
