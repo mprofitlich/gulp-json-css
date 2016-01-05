@@ -1,7 +1,7 @@
 {
-  "name": "gulp-json-sass",
-  "description": "Gulp plugin for turning JSON files into files of scss/sass variable definitions.",
-  "version": "0.0.2",
+  "name": "gulp-json-css",
+  "description": "Gulp plugin for turning JSON files into files of scss/sass/less variable definitions.",
+  "version": "0.1.0",
   "scripts": {
     "test": "npm run coverage && npm run rm",
     "coverage": "istanbul cover test/*.js",
@@ -9,25 +9,27 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/rbalicki2/gulp-json-sass"
+    "url": "https://github.com/SimonHarte/gulp-json-css"
   },
   "keywords": [
     "gulp",
     "json",
     "sass",
     "scss",
+    "less",
     "css"
   ],
   "bugs": {
-    "url": "https://github.com/rbalicki2/gulp-json-sass/issues"
+    "url": "https://github.com/SimonHarte/gulp-json-css/issues"
   },
-  "homepage": "https://github.com/rbalicki2/gulp-json-sass",
+  "homepage": "https://github.com/SimonHarte/gulp-json-css",
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
     "gulp": "^3.8.6",
     "gulp-concat": "^2.3.4",
-    "gulp-ruby-sass": "^0.7.1",
+    "gulp-less": "^3.0.5",
+    "gulp-sass": "^2.1.1",
     "tape": "^2.14.0",
     "through2": "^0.5.1"
   },
@@ -35,6 +37,7 @@
     "chalk": "^0.5.1",
     "gulp-match": "^0.2.0",
     "gulp-util": "^3.0.0",
+    "merge": "^1.2.0",
     "through": "^2.3.4"
   }
 }
