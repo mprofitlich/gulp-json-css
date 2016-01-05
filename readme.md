@@ -1,38 +1,37 @@
-# Gulp-json-sass
+# Gulp-json-css
 
-> Gulp plugin for turning JSON files into files of scss/sass variable definitions.
+> Gulp plugin for turning JSON files into files of scss/sass/less variable definitions. This plugin is based on https://www.npmjs.com/package/gulp-json-sass
 
-*Issues should be reported on the [issue tracker](https://github.com/rbalicki2/gulp-json-sass/issues).*
+*Issues should be reported on the [issue tracker](https://github.com/SimonHarte/gulp-json-sass/issues).*
 
 This JSON file can also be read by your Javascript. This will make it easier to keep your JS code used for layout and your CSS code in sync.
 
-Supports all JSON objects, including nested objects, arrays and keys which are not legal key names (variable names that begin with a number will be prefixed; variable names containing illegal characters will have those characters escaped.)
+Supports all JSON objects, including nested objects, arrays and keys which are not legal key names.
+Variable names that begin with a number will be prefixed and variable names containing illegal characters will have those characters removed.
 
 Ignores (passes through) files with a extensions other than `.json`.
 
 ## Installation
 
 ```sh
-npm install --save gulp-json-sass
+npm install gulp-json-css --save-dev
 ```
 
 ## Example
 
-In this example gulpfile, a JSON file is turned into a file of sass variables, concatenated with a sass file, and compiled using `gulp-ruby-sass`.
+In this example gulpfile, a JSON file is turned into a file of scss variables, concatenated with a scss file, and compiled using `gulp-sass`.
 
 ```js
-var jsonSass = require('gulp-json-sass'),
+var jsonCss = require('gulp-json-css'),
     gulp = require('gulp'),
     concat = require('gulp-concat'),
-    sass = require('gulp-ruby-sass');
+    sass = require('gulp-sass');
 
-gulp.task('sass', function() {
+gulp.task('scss', function() {
   return gulp
-    .src(['example.json', 'example.sass'])
-    .pipe(jsonSass({
-      sass: true
-    }))
-    .pipe(concat('output.sass'))
+    .src(['example.json', 'example.scss'])
+    .pipe(jsonCss())
+    .pipe(concat('output.scss'))
     .pipe(sass())
     .pipe(gulp.dest('out/'));
 });
@@ -40,7 +39,7 @@ gulp.task('sass', function() {
 
 ## API
 
-### jsonSass(options)
+### jsonCss(options)
 
 Returns: `stream`
 
@@ -71,13 +70,6 @@ $someObject-someKey: 123;
 
 Note that keys can contain the delimiter. No attempt is made to ensure that variable names are unique.
 
-##### Sass
-
-Type: `boolean`  
-Default: `false`
-
-If truthy, output valid sass variables. If false, output scss variables.
-
 ##### ignoreJsonErrors
 
 Type: `boolean`  
@@ -85,21 +77,13 @@ Default: `false`
 
 If true, malformed JSON does not result in the plugin emitting an error.
 
-##### escapeIllegalCharacters
+##### numberPrefix
 
-Type: `boolean`  
-Default: `true`
+Type: `string`  
+Default: `_`
 
-If true, escapes illegal characters in variable names with a backslash (`\`). See http://stackoverflow.com/questions/17191265/legal-characters-for-sass-and-scss-variable-names
-
-The following characters are escaped: `!"#$%&'()*+,./:;<=>?@[]^{|}~` and white space.
-
-##### prefixFirstNumericCharacter
-
-Type: `boolean`  
-Default: `true`
-
-If true, **top-level** keys that begin with a number will be prefixed with `options.firstCharacter`, but **not** keys of nested objects. For example,
+What string to use to prefix numeric top-level keys. It is necessary since variables aren't allowed to start with a number.
+This means that the following object:
 
 ```js
 {
@@ -110,19 +94,12 @@ If true, **top-level** keys that begin with a number will be prefixed with `opti
 }
 ```
 
-Will result in, in scss mode, with `options.firstCharacter` and `options.delim` left as the defaults:
+Will result in (scss mode):
 
 ```scss
 $_1maca-2maca: asdf;
 $_3maca: rena;
 ```
-
-##### firstCharacter
-
-Type: `string`  
-Default: `_`
-
-What string to use to prefix numeric top-level keys.
 
 ## License
 
