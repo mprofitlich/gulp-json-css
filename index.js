@@ -13,6 +13,7 @@ const defaults = {
 	eol: ';',
 	ignoreJsonErrors: false,
 	numberPrefix: '_',
+	useLists: false,
 	pre: '$'
 };
 
@@ -27,7 +28,7 @@ const removeInvalidCharacters = function(str) {
 
 const firstCharacterIsNumber = /^[0-9]/;
 
-const loadVariablesRecursive = function(obj, path, cb) {
+const buildVariablesRecursive = function(obj, path, cb) {
 	let val;
 	let key;
 
@@ -44,9 +45,56 @@ const loadVariablesRecursive = function(obj, path, cb) {
 			}
 
 			if(typeof val === 'object') {
-				loadVariablesRecursive(val, path + key + settings.delim, cb);
+				buildVariablesRecursive(val, path + key + settings.delim, cb);
 			} else {
 				cb(settings.pre + path + key + ': ' + val + settings.eol);
+			}
+		}
+	}
+};
+
+const buildListsRecursive = function(obj, isTop, cb) {
+	let val;
+	let key;
+	let type;
+
+	for(key in obj) {
+		if(obj.hasOwnProperty(key)) {
+			val = obj[key];
+			type = val.constructor;
+
+			// remove invalid characters
+			key = removeInvalidCharacters(key);
+
+			// variables cannot begin with a number
+			if(path === '' && firstCharacterIsNumber.exec(key)) {
+				key = settings.numberPrefix + key;
+			}
+
+			if(type == Object || type == Array) {
+				if(isTop) {
+					cb(settings.pre + key + ': (');
+					if(type == Array) {
+						cb(val.join(', '));
+					} else {
+						buildListsRecursive(val, false, cb);
+					}
+					cb(')' + settings.eol);
+				} else {
+					cb(key + ' (');
+					if(type == Array) {
+						cb(val.join(', '));
+					} else {
+						buildListsRecursive(val, false, cb);
+					}
+					cb(')');
+				}
+			} else {
+				if(isTop) {
+					cb(settings.pre + key + ': ' + val + settings.eol);
+				} else {
+					cb('(' + key + ' ' + val + ')');
+				}
 			}
 		}
 	}
@@ -77,12 +125,19 @@ const processJSON = function(file) {
 	// process the JSON
 	const variables = [];
 
-	loadVariablesRecursive(parsedJSON, '', (assignmentString) => {
-		variables.push(assignmentString);
-	});
+	if(settings.useLists) {
+		buildListsRecursive(parsedJSON, true, (assignmentString) => {
+			variables.push(assignmentString);
+		});
+	} else {
+		buildVariablesRecursive(parsedJSON, '', (assignmentString) => {
+			variables.push(assignmentString);
+		});
+	}
 
 	const content = variables.join('\n');
 
+	console.log(content);
 	file.contents = Buffer(content);
 
 	file.path = gUtil.replaceExtension(file.path, '.' + settings.targetPre);
