@@ -44,8 +44,14 @@ const buildVariablesRecursive = function(obj, path, cb) {
 				key = settings.numberPrefix + key;
 			}
 
-			if(typeof val === 'object') {
+			if(val.constructor == Object) {
 				buildVariablesRecursive(val, path + key + settings.delim, cb);
+			} else if(val.constructor == Array) {
+				if(settings.keepObjects) {
+					cb(settings.pre + path + key + ': ' + val.join(', ') + settings.eol);
+				} else {
+					buildVariablesRecursive(val, path + key + settings.delim, cb);
+				}
 			} else {
 				cb(settings.pre + path + key + ': ' + val + settings.eol);
 			}
