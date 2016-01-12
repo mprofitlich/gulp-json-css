@@ -13,7 +13,7 @@ const defaults = {
 	eol: ';',
 	ignoreJsonErrors: false,
 	numberPrefix: '_',
-	useLists: false,
+	keepObjects: false,
 	pre: '$'
 };
 
@@ -53,48 +53,94 @@ const buildVariablesRecursive = function(obj, path, cb) {
 	}
 };
 
-const buildListsRecursive = function(obj, isTop, cb) {
-	let val;
+let line = '';
+
+const buildMapListRecursive = function(obj, isTop, cb) {
 	let key;
-	let type;
 
 	for(key in obj) {
 		if(obj.hasOwnProperty(key)) {
-			val = obj[key];
-			type = val.constructor;
+			let val = obj[key];
 
 			// remove invalid characters
 			key = removeInvalidCharacters(key);
 
 			// variables cannot begin with a number
-			if(path === '' && firstCharacterIsNumber.exec(key)) {
+			if(firstCharacterIsNumber.exec(key)) {
 				key = settings.numberPrefix + key;
 			}
 
-			if(type == Object || type == Array) {
+			if(val.constructor == Object) {
 				if(isTop) {
-					cb(settings.pre + key + ': (');
-					if(type == Array) {
-						cb(val.join(', '));
-					} else {
-						buildListsRecursive(val, false, cb);
+					switch(settings.targetPre) {
+						case 'sass':
+						case 'scss':
+							line += settings.pre + key + ': (';
+							buildMapListRecursive(val, false);
+							line += ')' + settings.eol;
+							break;
+						case 'less':
+							// we cannot have nested objects in less so we build the default path variable
+							buildVariablesRecursive(val, key + settings.delim, cb);
+							break;
 					}
-					cb(')' + settings.eol);
 				} else {
-					cb(key + ' (');
-					if(type == Array) {
-						cb(val.join(', '));
-					} else {
-						buildListsRecursive(val, false, cb);
+					switch(settings.targetPre) {
+						case 'sass':
+							line += key + ': (';
+							buildMapListRecursive(val, false);
+							line += '),';
+							break;
+						case 'scss':
+							line += key + ' (';
+							buildMapListRecursive(val, false);
+							line += '),';
+							break;
+						case 'less':
+							// we cannot have nested objects in less so we build the default path variable
+							buildVariablesRecursive(val, key + settings.delim, cb);
+							break;
 					}
-					cb(')');
+				}
+			} else if(val.constructor == Array) {
+				if(isTop) {
+					switch(settings.targetPre) {
+						case 'sass':
+						case 'scss':
+							line += settings.pre + key + ': (' + val.join(', ') + ')' + settings.eol;
+							break;
+						case 'less':
+							line += settings.pre + key + ': ' + val.join(', ') + settings.eol;
+							break;
+					}
+				} else {
+					switch(settings.targetPre) {
+						case 'sass':
+							line += key + ': (' + val.join(', ') + ')';
+							break;
+						case 'scss':
+							line += key + ' (' + val.join(', ') + ')';
+							break;
+					}
 				}
 			} else {
 				if(isTop) {
-					cb(settings.pre + key + ': ' + val + settings.eol);
+					line += settings.pre + key + ': ' + val + settings.eol;
 				} else {
-					cb('(' + key + ' ' + val + ')');
+					switch(settings.targetPre) {
+						case 'sass':
+							line += key + ': ' + val + ', ';
+							break;
+						case 'scss':
+							line += '(' + key + ' ' + val + ')';
+							break;
+					}
 				}
+			}
+
+			if(cb) {
+				cb(line);
+				line = '';
 			}
 		}
 	}
@@ -125,8 +171,8 @@ const processJSON = function(file) {
 	// process the JSON
 	const variables = [];
 
-	if(settings.useLists) {
-		buildListsRecursive(parsedJSON, true, (assignmentString) => {
+	if(settings.keepObjects) {
+		buildMapListRecursive(parsedJSON, true, (assignmentString) => {
 			variables.push(assignmentString);
 		});
 	} else {
@@ -137,7 +183,6 @@ const processJSON = function(file) {
 
 	const content = variables.join('\n');
 
-	console.log(content);
 	file.contents = Buffer(content);
 
 	file.path = gUtil.replaceExtension(file.path, '.' + settings.targetPre);
@@ -150,11 +195,16 @@ module.exports = function(config) {
 
 	switch(settings.targetPre) {
 		case 'scss':
+			settings.pre = '$';
+			settings.eol = ';';
+			break;
 		case 'sass':
 			settings.pre = '$';
+			settings.eol = '';
 			break;
 		case 'less':
 			settings.pre = '@';
+			settings.eol = ';';
 			break;
 	}
 

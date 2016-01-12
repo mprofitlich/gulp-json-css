@@ -36,9 +36,7 @@ const runTests = function(t, opt) {
 			t.end();
 		})
 		.pipe(through2.obj(function(file, encoding, done) {
-			if(!file.path.match('stub')) {
-				t.equal(file.contents.toString().split('\n').length, 6, 'test json should result in a 6 line file');
-			} else {
+			if(file.path.match('stub')) {
 				t.equal(file.contents.toString(), fileObj.contents.toString(), 'non-json files should not be modified (content)');
 				t.equal(file.path, fileObj.path, 'non-json files should not be modified (file path)');
 			}
@@ -49,7 +47,7 @@ const runTests = function(t, opt) {
 		.pipe(suffix === 'less' ? less() : sass())
 		.on('end', () => {
 			if(failedJsonCompilation) {
-				t.fail('json failed to compile');
+				t.fail(chalk.red('json failed to compile'));
 			}
 		})
 		.on('error', () => {
@@ -96,6 +94,12 @@ for(let i = 0; i < preprocessor.length; i++) {
 	setupTest('proper support for escaping illegal characters', {
 		src: path.join(__dirname, './fixtures/escape.json'),
 		targetPre: preprocessor[i]
+	});
+
+	setupTest('use variable lists for objects', {
+		src: path.join(__dirname, './fixtures/maps-lists.json'),
+		targetPre: preprocessor[i],
+		keepObjects: true
 	});
 
 }
