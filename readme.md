@@ -2,7 +2,7 @@
 
 > Gulp plugin for turning JSON files into files of scss/sass/less variable definitions. This plugin is based on https://www.npmjs.com/package/gulp-json-sass
 
-*Issues should be reported on the [issue tracker](https://github.com/SimonHarte/gulp-json-sass/issues).*
+*Issues should be reported on the [issue tracker](https://github.com/SimonHarte/gulp-json-scss/issues).*
 
 This JSON file can also be read by your Javascript. This will make it easier to keep your JS code used for layout and your CSS code in sync.
 
@@ -49,7 +49,7 @@ Type: `object`
 
 ##### targetPre
 
-Type: `string`
+Type: `string`  
 Default: `scss`
 
 Defines the target preprocessor for which JSON files should be converted.
@@ -80,7 +80,7 @@ No attempt is made to ensure that variable names are unique.
 
 ##### keepObjects
 
-Type: `boolean`
+Type: `boolean`  
 Default: `false`
 
 Instead of creating a variable with every object value you can instead convert objects to maps and arrays to lists.
@@ -125,10 +125,10 @@ we can only convert arrays to lists, so for objects we go back to chaining keys 
 Output with the above setup:
 
 ```less
-$anObject-anArray: 1, 2, 3;
-$anObject-aSubObject-key1: value1;
-$anObject-aSubObject-key2: value2;
-$anObject-aSubArray: 4, 5, 6;
+@anObject-anArray: 1, 2, 3;
+@anObject-aSubObject-key1: value1;
+@anObject-aSubObject-key2: value2;
+@anObject-aSubArray: 4, 5, 6;
 ```
 
 ##### numberPrefix
@@ -166,8 +166,8 @@ $_3maca: rena;
 
 ##### ignoreJsonErrors
 
-Type: `boolean`  
-Default: `false`
+- Type: `boolean`  
+- Default: `false`
 
 If true, malformed JSON does not result in the plugin emitting an error.
 
