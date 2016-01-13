@@ -8,13 +8,14 @@ const gUtil = require('gulp-util');
 const merge = require('merge');
 
 const defaults = {
-	delim: '-',
 	targetPre: 'scss',
-	eol: ';',
-	ignoreJsonErrors: false,
-	numberPrefix: '_',
+	delim: '-',
 	keepObjects: false,
-	pre: '$'
+	numberPrefix: '_',
+	ignoreJsonErrors: false,
+	eol: ';',
+	pre: '$',
+	propAssign: ': '
 };
 
 let settings;
@@ -47,6 +48,7 @@ const buildVariablesRecursive = function(obj, path, cb) {
 			if(val.constructor == Object) {
 				buildVariablesRecursive(val, path + key + settings.delim, cb);
 			} else if(val.constructor == Array) {
+				// always write arrays out as lists if we have the keepObjects setting
 				if(settings.keepObjects) {
 					cb(settings.pre + path + key + ': ' + val.join(', ') + settings.eol);
 				} else {
@@ -95,16 +97,8 @@ const buildMapListRecursive = function(obj, isTop, cb) {
 				} else {
 					switch(settings.targetPre) {
 						case 'sass':
-							line += key + ': (';
-							buildMapListRecursive(val, false);
-							line += ')';
-
-							if(!isLastKey) {
-								line += ', ';
-							}
-							break;
 						case 'scss':
-							line += key + ' (';
+							line += key + settings.propAssign + '(';
 							buildMapListRecursive(val, false);
 							line += ')';
 
@@ -120,24 +114,9 @@ const buildMapListRecursive = function(obj, isTop, cb) {
 				}
 			} else if(val.constructor == Array) {
 				if(isTop) {
-					switch(settings.targetPre) {
-						case 'sass':
-						case 'scss':
-							line += settings.pre + key + ': (' + val.join(', ') + ')' + settings.eol;
-							break;
-						case 'less':
-							line += settings.pre + key + ': ' + val.join(', ') + settings.eol;
-							break;
-					}
+					line += settings.pre + key + ': ' + val.join(', ') + settings.eol;
 				} else {
-					switch(settings.targetPre) {
-						case 'sass':
-							line += key + ': (' + val.join(', ') + ')';
-							break;
-						case 'scss':
-							line += key + ' (' + val.join(', ') + ')';
-							break;
-					}
+					line += key + settings.propAssign + '(' + val.join(', ') + ')';
 
 					if(!isLastKey) {
 						line += ', ';
@@ -147,14 +126,7 @@ const buildMapListRecursive = function(obj, isTop, cb) {
 				if(isTop) {
 					line += settings.pre + key + ': ' + val + settings.eol;
 				} else {
-					switch(settings.targetPre) {
-						case 'sass':
-							line += key + ': ' + val;
-							break;
-						case 'scss':
-							line += '(' + key + ' ' + val + ')';
-							break;
-					}
+					line += key + settings.propAssign + val;
 
 					if(!isLastKey) {
 						line += ', ';
