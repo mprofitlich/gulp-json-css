@@ -111,9 +111,9 @@ This output (the actual output is flattened into one line):
 $anArray (1, 2, 3);
 $anObject: (
 	aSubObject (
-		(key1 value1)
+		(key1 value1),
 		(key2 value2)
-	)
+	),
 	aSubArray (4, 5, 6)
 );
 ```

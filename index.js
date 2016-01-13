@@ -67,6 +67,8 @@ const buildMapListRecursive = function(obj, isTop, cb) {
 	for(key in obj) {
 		if(obj.hasOwnProperty(key)) {
 			let val = obj[key];
+			let allKeys = Object.keys(obj);
+			let isLastKey = allKeys.length && allKeys[allKeys.length - 1] === key;
 
 			// remove invalid characters
 			key = removeInvalidCharacters(key);
@@ -95,12 +97,20 @@ const buildMapListRecursive = function(obj, isTop, cb) {
 						case 'sass':
 							line += key + ': (';
 							buildMapListRecursive(val, false);
-							line += '),';
+							line += ')';
+
+							if(!isLastKey) {
+								line += ', ';
+							}
 							break;
 						case 'scss':
 							line += key + ' (';
 							buildMapListRecursive(val, false);
-							line += '),';
+							line += ')';
+
+							if(!isLastKey) {
+								line += ', ';
+							}
 							break;
 						case 'less':
 							// we cannot have nested objects in less so we build the default path variable
@@ -128,6 +138,10 @@ const buildMapListRecursive = function(obj, isTop, cb) {
 							line += key + ' (' + val.join(', ') + ')';
 							break;
 					}
+
+					if(!isLastKey) {
+						line += ', ';
+					}
 				}
 			} else {
 				if(isTop) {
@@ -135,11 +149,15 @@ const buildMapListRecursive = function(obj, isTop, cb) {
 				} else {
 					switch(settings.targetPre) {
 						case 'sass':
-							line += key + ': ' + val + ', ';
+							line += key + ': ' + val;
 							break;
 						case 'scss':
 							line += '(' + key + ' ' + val + ')';
 							break;
+					}
+
+					if(!isLastKey) {
+						line += ', ';
 					}
 				}
 			}
@@ -189,6 +207,7 @@ const processJSON = function(file) {
 
 	const content = variables.join('\n');
 
+	console.log(content);
 	file.contents = Buffer(content);
 
 	file.path = gUtil.replaceExtension(file.path, '.' + settings.targetPre);
