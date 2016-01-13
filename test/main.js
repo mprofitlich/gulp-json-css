@@ -91,12 +91,12 @@ for(let i = 0; i < preprocessor.length; i++) {
 		targetPre: preprocessor[i]
 	});
 
-	setupTest('proper support for escaping illegal characters', {
+	setupTest('proper support for removing illegal characters', {
 		src: path.join(__dirname, './fixtures/escape.json'),
 		targetPre: preprocessor[i]
 	});
 
-	setupTest('use variable lists for objects', {
+	setupTest('use maps and lists for objects', {
 		src: path.join(__dirname, './fixtures/maps-lists.json'),
 		targetPre: preprocessor[i],
 		keepObjects: true

@@ -105,11 +105,11 @@ And with a more complex setup:
 }
 ```
 
-This output:
+This output (the actual output is flattened into one line):
 
 ```scss
+$anArray (1, 2, 3);
 $anObject: (
-	anArray (1, 2, 3)
 	aSubObject (
 		(key1 value1)
 		(key2 value2)
