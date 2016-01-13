@@ -15,14 +15,11 @@ const chalk = require('chalk');
 const runTests = function(t, opt) {
 	const suffix = opt.targetPre;
 
-	opt.sassShouldCompile = opt.sassShouldCompile === undefined ? true : opt.sassShouldCompile;
-	opt.jsonShouldCompile = opt.jsonShouldCompile === undefined ? true : opt.jsonShouldCompile;
-
 	let fileObj;
 	let failedCompilation = false;
 	let failedJsonCompilation = false;
 
-	const stream = through2.obj((file, encoding, done) => {
+	const stream = through2.obj(function(file, encoding, done) {
 		if(file.path.match('stub')) {
 			fileObj = file;
 		}
@@ -38,10 +35,8 @@ const runTests = function(t, opt) {
 			failedJsonCompilation = true;
 			t.end();
 		})
-		.pipe(through2.obj((file, encoding, done) => {
-			if(!file.path.match('stub')) {
-				t.equal(file.contents.toString().split('\n').length, 6, 'test json should result in a 6 line file');
-			} else {
+		.pipe(through2.obj(function(file, encoding, done) {
+			if(file.path.match('stub')) {
 				t.equal(file.contents.toString(), fileObj.contents.toString(), 'non-json files should not be modified (content)');
 				t.equal(file.path, fileObj.path, 'non-json files should not be modified (file path)');
 			}
@@ -50,15 +45,9 @@ const runTests = function(t, opt) {
 		}))
 		.pipe(concat('test.' + suffix))
 		.pipe(suffix === 'less' ? less() : sass())
-		.on('end', function() {
-			if(opt.jsonShouldCompile && !failedJsonCompilation) {
-				t.pass('json compiled successfully, as expected');
-			} else if(!opt.jsonShouldCompile && failedJsonCompilation) {
-				t.pass('json failed to compile, as expected');
-			} else if(opt.jsonShouldCompile && failedJsonCompilation) {
-				t.fail('json failed to compile when expected to pass');
-			} else if(!opt.jsonShouldCompile && !failedJsonCompilation) {
-				t.fail('json compiled when it was expected to fail');
+		.on('end', () => {
+			if(failedJsonCompilation) {
+				t.fail(chalk.red('json failed to compile'));
 			}
 		})
 		.on('error', () => {
@@ -80,14 +69,14 @@ const runTests = function(t, opt) {
 	}));
 
 	stream.end();
-}
+};
 
-function setupTest(name, opt) {
+const setupTest = function(name, opt) {
 	test(name, (t) => {
-		console.log(chalk.yellow('Test: ' + name) + chalk.green(' (' + opt.targetPre + ' mode)'));
+		console.log(chalk.cyan('Test: ' + name) + chalk.green(' (' + opt.targetPre + ' mode)'));
 		runTests(t, opt);
 	})
-}
+};
 
 const preprocessor = ['scss', 'sass', 'less'];
 
@@ -102,9 +91,15 @@ for(let i = 0; i < preprocessor.length; i++) {
 		targetPre: preprocessor[i]
 	});
 
-	setupTest('proper support for escaping illegal characters', {
+	setupTest('proper support for removing illegal characters', {
 		src: path.join(__dirname, './fixtures/escape.json'),
 		targetPre: preprocessor[i]
+	});
+
+	setupTest('use maps and lists for objects', {
+		src: path.join(__dirname, './fixtures/maps-lists.json'),
+		targetPre: preprocessor[i],
+		keepObjects: true
 	});
 
 }
