@@ -47,12 +47,19 @@ Returns: `stream`
 
 Type: `object`
 
+##### targetPre
+
+Type: `string`
+Default: `scss`
+
+Defines the target preprocessor for which JSON files should be converted.
+
 ##### delim
 
 Type: `string`  
 Default: `-`
 
-String used to delimit nested objects. For example, if `delim` is `'-'`, then
+Delimiter used to chain nested objects keys to a simple variables. For example, if `delim` is `'-'`, then
 
 ```js
 {
@@ -62,27 +69,75 @@ String used to delimit nested objects. For example, if `delim` is `'-'`, then
 }
 ```
 
-will be converted into (in scss mode):
+will be converted into (in SCSS):
 
 ```scss
 $someObject-someKey: 123;
 ```
 
-Note that keys can contain the delimiter. No attempt is made to ensure that variable names are unique.
+Note that keys themselves can contain the delimiter.
+No attempt is made to ensure that variable names are unique.
 
-##### ignoreJsonErrors
+##### keepObjects
 
-Type: `boolean`  
+Type: `boolean`
 Default: `false`
 
-If true, malformed JSON does not result in the plugin emitting an error.
+Instead of creating a variable with every object value you can instead convert objects to maps and arrays to lists.
+With the example above you'd get this output instead (still SCSS):
+
+```scss
+$someObject: (someKey 123);
+```
+
+And with a more complex setup:
+
+```js
+{
+	"anArray": [1, 2, 3]
+	"anObject": {
+		"aSubObject": {
+			"key1": "value1",
+			"key2": "value2"
+		},
+		"aSubArray": [4, 5, 6]
+	}
+}
+```
+
+This output:
+
+```scss
+$anObject: (
+	anArray (1, 2, 3)
+	aSubObject (
+		(key1 value1)
+		(key2 value2)
+	)
+	aSubArray (4, 5, 6)
+);
+```
+
+> Note that you can only build simple lists in LessCSS.
+
+Since LessCSS does not allow for nested objects or objects in general for that matter,
+we can only convert arrays to lists, so for objects we go back to chaining keys to simple variables.
+Output with the above setup:
+
+```less
+$anObject-anArray: 1, 2, 3;
+$anObject-aSubObject-key1: value1;
+$anObject-aSubObject-key2: value2;
+$anObject-aSubArray: 4, 5, 6;
+```
 
 ##### numberPrefix
 
 Type: `string`  
 Default: `_`
 
-What string to use to prefix numeric top-level keys. It is necessary since variables aren't allowed to start with a number.
+What string is used to prefix numeric keys,
+it is necessary since variables aren't allowed to start with a number.
 This means that the following object:
 
 ```js
@@ -94,12 +149,27 @@ This means that the following object:
 }
 ```
 
-Will result in (scss mode):
+Will result in (SCSS):
 
 ```scss
 $_1maca-2maca: asdf;
 $_3maca: rena;
 ```
+
+Note that chained sub keys won't be prefixed since it's not necessary anymore,
+if you use the `keepObjects` setting though, every key starting with a number will be prefixed.
+
+```scss
+$_1maca: (_2maca asdf);
+$_3maca: rena;
+```
+
+##### ignoreJsonErrors
+
+Type: `boolean`  
+Default: `false`
+
+If true, malformed JSON does not result in the plugin emitting an error.
 
 ## License
 
