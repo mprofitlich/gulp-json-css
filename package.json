@@ -1,7 +1,7 @@
 {
   "name": "gulp-json-css",
   "description": "Gulp plugin for turning JSON files into files of scss/sass/less variable definitions.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "scripts": {
     "test": "npm run coverage && npm run rm",
     "coverage": "istanbul cover test/*.js",
