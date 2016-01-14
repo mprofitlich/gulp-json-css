@@ -4,10 +4,10 @@
 
 *Issues should be reported on the [issue tracker](https://github.com/SimonHarte/gulp-json-scss/issues).*
 
-This JSON file can also be read by your Javascript. This will make it easier to keep your JS code used for layout and your CSS code in sync.
+Now you can share configurations between your CSS files and Javascript!
 
 Supports all JSON objects, including nested objects, arrays and keys which are not legal key names.
-Variable names that begin with a number will be prefixed and variable names containing illegal characters will have those characters removed.
+Variable names that begin with a number will be prefixed and such containing illegal characters will have those characters removed.
 
 Ignores (passes through) files with a extensions other than `.json`.
 
@@ -49,7 +49,7 @@ Type: `object`
 
 ##### targetPre
 
-Type: `string`  
+Type: `string` (`scss|sass|less`)  
 Default: `scss`
 
 Defines the target preprocessor for which JSON files should be converted.
@@ -94,7 +94,7 @@ And with a more complex setup:
 
 ```js
 {
-	"anArray": [1, 2, 3]
+	"anArray": [1, 2, 3],
 	"anObject": {
 		"aSubObject": {
 			"key1": "value1",
@@ -108,7 +108,7 @@ And with a more complex setup:
 This output (the actual output is flattened into one line):
 
 ```scss
-$anArray (1, 2, 3);
+$anArray: (1, 2, 3);
 $anObject: (
 	aSubObject: (
 		key1: value1,
