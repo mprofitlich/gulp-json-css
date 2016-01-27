@@ -179,7 +179,6 @@ const processJSON = function(file) {
 
 	const content = variables.join('\n');
 
-	console.log(content);
 	file.contents = Buffer(content);
 
 	file.path = gUtil.replaceExtension(file.path, '.' + settings.targetPre);
