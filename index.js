@@ -21,13 +21,31 @@ const defaults = {
 let settings;
 
 // from http://stackoverflow.com/questions/17191265/legal-characters-for-sass-and-scss-variable-names
-const invalidCharactersRegex = /(["!#$%&'()*+,.\/:;\s<=>?@\[\]^\{\}|~])/g;
+const keyInvalidCharactersRegex = /(["!#$%&'()*+,.\/:;\s<=>?@\[\]^\{\}|~])/g;
 
 const removeInvalidCharacters = function(str) {
-	return str.replace(invalidCharactersRegex, '');
+	return str.replace(keyInvalidCharactersRegex, '');
 };
 
 const firstCharacterIsNumber = /^[0-9]/;
+
+const valueInvalidCharactersRegex = /[.\-\[\]{}():]/;
+
+const needsQuotes = function(value) {
+	// Nur Strings prüfen
+	if (typeof value !== 'string') {
+		return false;
+	}
+	
+	return valueInvalidCharactersRegex.test(value);
+};
+
+const formatValue = function(value) {
+	if (needsQuotes(value)) {
+		return '"' + value + '"';
+	}
+	return value;
+};
 
 const buildVariablesRecursive = function(obj, path, cb) {
 	let val;
@@ -50,12 +68,16 @@ const buildVariablesRecursive = function(obj, path, cb) {
 			} else if(val.constructor == Array) {
 				// always write arrays out as lists if we have the keepObjects setting
 				if(settings.keepObjects) {
-					cb(settings.pre + path + key + ': ' + val.join(', ') + settings.eol);
+					// Format array values properly
+					const formattedArray = val.map(item => formatValue(item));
+					cb(settings.pre + path + key + ': ' + formattedArray.join(', ') + settings.eol);
 				} else {
 					buildVariablesRecursive(val, path + key + settings.delim, cb);
 				}
 			} else {
-				cb(settings.pre + path + key + ': ' + val + settings.eol);
+				// Format the value properly
+				const formattedVal = formatValue(val);
+				cb(settings.pre + path + key + ': ' + formattedVal + settings.eol);
 			}
 		}
 	}
@@ -113,20 +135,22 @@ const buildMapListRecursive = function(obj, isTop, cb) {
 					}
 				}
 			} else if(val.constructor == Array) {
+				const formattedArray = val.map(item => formatValue(item));
 				if(isTop) {
-					line += settings.pre + key + ': ' + val.join(', ') + settings.eol;
+					line += settings.pre + key + ': ' + formattedArray.join(', ') + settings.eol;
 				} else {
-					line += key + settings.propAssign + '(' + val.join(', ') + ')';
+					line += key + settings.propAssign + '(' + formattedArray.join(', ') + ')';
 
 					if(!isLastKey) {
 						line += ', ';
 					}
 				}
 			} else {
+				const formattedVal = formatValue(val);
 				if(isTop) {
-					line += settings.pre + key + ': ' + val + settings.eol;
+					line += settings.pre + key + ': ' + formattedVal + settings.eol;
 				} else {
-					line += key + settings.propAssign + val;
+					line += key + settings.propAssign + formattedVal;
 
 					if(!isLastKey) {
 						line += ', ';
